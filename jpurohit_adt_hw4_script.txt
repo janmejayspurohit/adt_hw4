@@ -1,0 +1,35 @@
+// Load CSV data from the preprocessed Forbes Richest People CSV file
+LOAD CSV WITH HEADERS FROM 'file:///preprocessed_forbes_richman.csv' AS row
+
+// Create a Person node for each row in the CSV file with properties: name, rank, age, net_worth, and citizenship
+MERGE (p:Person {name: row.Name, rank: toInteger(row.Rank), age: toInteger(row.Age), net_worth: row['Net Worth'], citizenship: row.Country})
+
+// Create a Country node for each unique country in the dataset, with the property: name
+MERGE (c:Country {name: row.Country})
+
+// Create a Source node for each unique source of wealth in the dataset, with the property: name
+MERGE (s:Source {name: row.Source})
+
+// Create a relationship between the Person and Country nodes, indicating the person's country of origin
+MERGE (p)-[:FROM]->(c)
+
+// Create a relationship between the Person and Source nodes, indicating the source of the person's wealth
+MERGE (p)-[:MADE_WEALTH_FROM]->(s)
+
+
+// Top 10 richest people:
+MATCH (p:Person)
+RETURN p.name, p.net_worth
+ORDER BY p.net_worth DESC
+LIMIT 10
+
+// Number of billionaires per country:
+MATCH (p:Person)-[:FROM]->(c:Country)
+RETURN c.name, count(p) as num_billionaires
+ORDER BY num_billionaires DESC
+
+// Age distribution of billionaires:
+MATCH (p:Person)
+RETURN p.age, count(p) as num_people
+ORDER BY p.age
+
